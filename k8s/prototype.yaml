@@ -48,7 +48,7 @@ spec:
     spec:
       containers:
         - name: authz-graph
-          image: YOUR_REGISTRY/authz-graph:prototype
+          image: alpine:3.14
           env:
             - name: REDIS_URL
               value: redis://redis:6379/0
