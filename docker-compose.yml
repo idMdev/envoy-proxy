@@ -1,0 +1,41 @@
+version: "3.9"
+
+services:
+  envoy:
+    image: envoyproxy/envoy:v1.31-latest
+    container_name: envoy-gateway
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./envoy/envoy.yaml:/etc/envoy/envoy.yaml:ro
+    depends_on:
+      - authz-graph
+
+  authz-graph:
+    build:
+      context: ./authz-graph
+    container_name: authz-graph
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - CACHE_TTL_SECONDS=3600
+      - ENTRA_TENANT_ID=common
+      - GRAPH_TIMEOUT_SECONDS=5
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:7-alpine
+    container_name: gateway-redis
+    ports:
+      - "6379:6379"
+
+  mitmproxy:
+    image: mitmproxy/mitmproxy:10.3.0
+    container_name: gateway-mitmproxy
+    command: ["mitmdump", "--mode", "regular", "--listen-port", "8081", "-s", "/home/mitmproxy/lang_inject.py"]
+    volumes:
+      - ./mitmproxy/lang_inject.py:/home/mitmproxy/lang_inject.py:ro
+    ports:
+      - "8081:8081"
+    profiles:
+      - tlsi
